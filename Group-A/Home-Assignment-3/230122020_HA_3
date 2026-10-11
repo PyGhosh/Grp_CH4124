@@ -1,0 +1,550 @@
+{
+  "cells": [
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "view-in-github",
+        "colab_type": "text"
+      },
+      "source": [
+        "<a href=\"https://colab.research.google.com/github/PyGhosh/Grp_CH4124/blob/main/Group-A/Home-Assignment-3/230122020_HA_3\" target=\"_parent\"><img src=\"https://colab.research.google.com/assets/colab-badge.svg\" alt=\"Open In Colab\"/></a>"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "cell-000"
+      },
+      "source": [
+        "# Bayes and Naive Bayes: home assignment\n",
+        "\n",
+        "\n"
+      ],
+      "id": "cell-000"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "cell-001",
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "outputId": "7f35e453-6ebc-45b2-e692-32d3f64d5720"
+      },
+      "source": [
+        "import numpy as np\n",
+        "import matplotlib.pyplot as plt\n",
+        "from scipy.stats import beta\n",
+        "from sklearn.naive_bayes import GaussianNB\n",
+        "from sklearn.model_selection import train_test_split\n",
+        "from sklearn.metrics import accuracy_score, confusion_matrix\n",
+        "np.set_printoptions(precision=5, suppress=True)\n",
+        "print(\"Ready! Class order in manual examples: Insulator, Metal.\")"
+      ],
+      "execution_count": 1,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Ready! Class order in manual examples: Insulator, Metal.\n"
+          ]
+        }
+      ],
+      "id": "cell-001"
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "cell-002"
+      },
+      "source": [
+        "## Problem 1. Conditional probability\n",
+        "\n",
+        "A new teaching dataset has rows [perovskite, not perovskite] and columns [oxide, not oxide]. Calculate the joint probability and both conditional probabilities.\n",
+        "\n"
+      ],
+      "id": "cell-002"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "cell-003",
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "outputId": "791e0438-2719-438f-87da-489d98d972c3"
+      },
+      "source": [
+        "counts = np.array([[4, 2], [3, 6]])\n",
+        "total = counts.sum()\n",
+        "p_joint = counts[0,0]/ total  # TODO: P(perovskite and oxide)\n",
+        "p_p_given_o = counts[0,0] /counts[:,0].sum()  # TODO: P(perovskite | oxide)\n",
+        "p_o_given_p = counts[0,0] / counts[0, : ].sum()  # TODO: P(oxide | perovskite)\n",
+        "\n",
+        "if any(v is None for v in [p_joint, p_p_given_o, p_o_given_p]):\n",
+        "    print('Complete the three TODOs.')\n",
+        "else:\n",
+        "    assert np.allclose([p_joint, p_p_given_o, p_o_given_p], [4/15, 4/7, 4/6])\n",
+        "    print('Check passed:', p_joint, p_p_given_o, p_o_given_p)"
+      ],
+      "execution_count": 2,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Check passed: 0.26666666666666666 0.5714285714285714 0.6666666666666666\n"
+          ]
+        }
+      ],
+      "id": "cell-003"
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "cell-004"
+      },
+      "source": [
+        "**Explain (1–2 sentences):** Why do the two conditional probabilities differ?\n",
+        "\n",
+        "**Answer:** These probabilities condition on different events, so their denominators differ. Specifically, P(perovskite | oxide) uses all oxide cases, while P(oxide | perovskite) uses all perovskite cases."
+      ],
+      "id": "cell-004"
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "cell-005"
+      },
+      "source": [
+        "## Problem 2. One positive screening result\n",
+        "\n",
+        "A stable material occurs with prior probability 0.10. A filter flags 80% of stable and 20% of unstable materials. Compute P(flag) and P(stable | flag).\n",
+        "\n"
+      ],
+      "id": "cell-005"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "cell-006",
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "outputId": "0d0aa949-28e8-494f-ebe3-80f81519c89a"
+      },
+      "source": [
+        "prior, sensitivity, fpr = 0.10, 0.80, 0.20\n",
+        "p_flag = sensitivity * prior + fpr * (1 - prior) # TODO\n",
+        "posterior = sensitivity*prior / p_flag  # TODO\n",
+        "\n",
+        "if p_flag is None or posterior is None:\n",
+        "    print('Complete both TODOs.')\n",
+        "else:\n",
+        "    assert np.isclose(p_flag, 0.26)\n",
+        "    assert np.isclose(posterior*p_flag, sensitivity*prior)\n",
+        "    print('Check passed. Posterior:', posterior)"
+      ],
+      "execution_count": 3,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Check passed. Posterior: 0.30769230769230776\n"
+          ]
+        }
+      ],
+      "id": "cell-006"
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "cell-007"
+      },
+      "source": [
+        "**Explain (1–2 sentences):** Why is the answer different from the sensitivity of 0.80?\n",
+        "\n",
+        "**Answer:**  Sensitivity is P(flag | stable), whereas the requested posterior is P(stable | flag). The posterior also depends on how common stable materials are and on false positives among unstable materials."
+      ],
+      "id": "cell-007"
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "cell-008"
+      },
+      "source": [
+        "## Problem 3. A second independent filter\n",
+        "\n",
+        "Use the same rates as Problem 2. Write a reusable Bayes update function; apply it twice starting at 0.10. Assume the filters are independent conditional on the true class.\n"
+      ],
+      "id": "cell-008"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "cell-009",
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "outputId": "867085cd-82d8-419f-836a-9ab32382c2ca"
+      },
+      "source": [
+        "def update(prior, sensitivity, fpr):\n",
+        "    p_positive = sensitivity * prior + fpr * (1 - prior)\n",
+        "    posterior = sensitivity*prior / p_positive\n",
+        "    return posterior  # TODO\n",
+        "\n",
+        "first = update(0.10, 0.80, 0.20)\n",
+        "second = update(first, 0.80, 0.20) # TODO: call update using first, after implementing the function\n",
+        "\n",
+        "if first is None or second is None:\n",
+        "    print('Complete the function and second update.')\n",
+        "else:\n",
+        "    assert np.isclose(first, 4/13)\n",
+        "    assert np.isclose(second, 0.64)\n",
+        "    print('Check passed:', first, second)"
+      ],
+      "execution_count": 4,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Check passed: 0.30769230769230776 0.64\n"
+          ]
+        }
+      ],
+      "id": "cell-009"
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "cell-010"
+      },
+      "source": [
+        "**Explain (1–2 sentences):** Would applying the same deterministic filter twice justify this update?\n",
+        "\n",
+        "**Answer:** Not necessarily. Repeating the same deterministic filter on the same unchanged sample does not provide a new independent observation; the update is justified only if the second result supplies conditionally independent evidence with the stated rates."
+      ],
+      "id": "cell-010"
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "cell-011"
+      },
+      "source": [
+        "## Problem 4. Beta update\n",
+        "\n",
+        "Start with Beta(3,7). Observe 4 stable candidates in 12 trials. Calculate the posterior parameters and mean.\n"
+      ],
+      "id": "cell-011"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "cell-012",
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "outputId": "074dfd39-59f2-4663-b990-e6eeae57d56f"
+      },
+      "source": [
+        "a, b, k, n = 3, 7, 4, 12\n",
+        "a_post = a + k  # TODO\n",
+        "b_post = b +(n-k) # TODO\n",
+        "post_mean = a_post / (a_post + b_post)  # TODO\n",
+        "\n",
+        "if any(v is None for v in [a_post, b_post, post_mean]):\n",
+        "    print('Complete all TODOs.')\n",
+        "else:\n",
+        "    assert a_post == 7 and b_post == 15\n",
+        "    assert np.isclose(post_mean, a_post/(a_post+b_post))\n",
+        "    print('Check passed:', a_post, b_post, post_mean)"
+      ],
+      "execution_count": 5,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Check passed: 7 15 0.3181818181818182\n"
+          ]
+        }
+      ],
+      "id": "cell-012"
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "cell-013"
+      },
+      "source": [
+        "**Explain (1–2 sentences):** Compare the posterior mean with the prior mean and the observed success fraction.\n",
+        "\n",
+        "**Answer:** The prior mean is 3/(3+7) = 0.30, while the posterior mean is 7/(7+15) ≈ 0.318. The observed success fraction is 4/12 ≈ 0.333, so the posterior mean moves toward the observed fraction but remains moderated by the prior."
+      ],
+      "id": "cell-013"
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "cell-014"
+      },
+      "source": [
+        "## Problem 5. Discrete classification\n",
+        "Classify a non-oxide with coordination number 6 and density below 5 g/cm³. Rows are [Insulator, Metal]; columns are [oxide, CN=6, low density]. Complement only the oxide column.\n"
+      ],
+      "id": "cell-014"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "cell-015",
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "outputId": "287b3592-5d70-40fa-9035-27af55324a5f"
+      },
+      "source": [
+        "priors = np.array([2/3, 1/3])\n",
+        "base = np.array([[0.8, 0.5, 0.6], [0.3, 0.3, 0.4]])\n",
+        "observed = base.copy()\n",
+        "observed[:, 0] = 1 - observed[:, 0]  # non-oxide: complement oxide probabilities\n",
+        "scores = priors * np.prod(observed, axis=1)\n",
+        "posterior = scores / scores.sum()\n",
+        "\n",
+        "if any(v is None for v in [observed, scores, posterior]):\n",
+        "    print('Complete all TODOs.')\n",
+        "else:\n",
+        "    assert np.allclose(scores, [0.04, 0.028])\n",
+        "    assert np.allclose(posterior, scores/scores.sum())\n",
+        "    print('Check passed. Posterior [I,M]:', posterior)"
+      ],
+      "execution_count": 6,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Check passed. Posterior [I,M]: [0.58824 0.41176]\n"
+          ]
+        }
+      ],
+      "id": "cell-015"
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "cell-016"
+      },
+      "source": [
+        "**Explain (1–2 sentences):** Which class wins, and why is the decision less decisive than for an oxide?\n",
+        "\n",
+        "**Answer:** The insulator class wins because its posterior score (0.040) is greater than the metal score (0.028). The result is less decisive because the non-oxide likelihoods are complements of the oxide likelihoods, and the resulting scores are relatively close."
+      ],
+      "id": "cell-016"
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "cell-017"
+      },
+      "source": [
+        "## Problem 6. Laplace smoothing\n",
+        "Of 20 metals, zero have a binary feature. Of 40 insulators, eight have it. Compute smoothed P(feature=yes | class) for each class.\n",
+        "\n"
+      ],
+      "id": "cell-017"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "cell-018",
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "outputId": "20c575c5-5cca-465f-dbd4-b42302ae9959"
+      },
+      "source": [
+        "p_yes_metal = (0 + 1) / (20 + 2)\n",
+        "p_yes_insulator = (8 + 1) / (40 + 2)\n",
+        "\n",
+        "if p_yes_metal is None or p_yes_insulator is None:\n",
+        "    print('Complete both TODOs.')\n",
+        "else:\n",
+        "    assert np.allclose([p_yes_metal,p_yes_insulator], [1/22,9/42])\n",
+        "    print('Check passed:', p_yes_metal, p_yes_insulator)"
+      ],
+      "execution_count": 7,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Check passed: 0.045454545454545456 0.21428571428571427\n"
+          ]
+        }
+      ],
+      "id": "cell-018"
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "cell-019"
+      },
+      "source": [
+        "**Explain (1–2 sentences):** Why does an observed count of zero not establish physical impossibility?\n",
+        "\n",
+        "**Answer:**  A zero count in a finite sample may reflect limited data rather than a true zero probability. Laplace smoothing adds a small pseudocount so the estimated probability remains nonzero and can generalize more sensibly."
+      ],
+      "id": "cell-019"
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "cell-020"
+      },
+      "source": [
+        "## Problem 7. Gaussian density\n",
+        "\n",
+        "Write the Gaussian density formula. Evaluate x=0.7 for a metal atomic-size descriptor with mean 0.6 Å and standard deviation 0.2 Å. Also calculate the z-score.\n",
+        "\n"
+      ],
+      "id": "cell-020"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "cell-021",
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "outputId": "20228418-fb3c-4cd6-a6b6-a4dc75cad26b"
+      },
+      "source": [
+        "def normal_density(x, mu, sigma):\n",
+        "     return np.exp(-0.5 * ((x - mu) / sigma) ** 2) / (sigma * np.sqrt(2 * np.pi))  # TODO\n",
+        "z = (0.7 - 0.6) / 0.2\n",
+        "density = normal_density(0.7, 0.6, 0.2)\n",
+        "\n",
+        "if z is None or density is None:\n",
+        "    print('Complete both TODOs.')\n",
+        "else:\n",
+        "    assert np.isclose(z, 0.5)\n",
+        "    assert np.isclose(density, 1.7603266338)\n",
+        "    print('Check passed:', z, density)"
+      ],
+      "execution_count": 8,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Check passed: 0.4999999999999999 1.7603266338214976\n"
+          ]
+        }
+      ],
+      "id": "cell-021"
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "cell-022"
+      },
+      "source": [
+        "**Explain (1–2 sentences):** Why is this density allowed to exceed one?\n",
+        "\n",
+        "**Answer:** A probability density is not itself a probability; probability is obtained by integrating density over an interval. A narrow distribution can have density greater than one while its total area remains exactly one."
+      ],
+      "id": "cell-022"
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "cell-023"
+      },
+      "source": [
+        "## Problem 8. Gaussian Naive Bayes\n",
+        "\n",
+        "Classify x=[5.0,0.7,0.6]. Features are density, atomic size and electronegativity difference. Calculate the 2×3 density array, class scores, and normalized probabilities.\n",
+        "\n"
+      ],
+      "id": "cell-023"
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "cell-024",
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "outputId": "db8d8353-5cf4-4c42-f640-4a06bc41d0aa"
+      },
+      "source": [
+        "x = np.array([5.0, 0.7, 0.6])\n",
+        "means = np.array([[4, 1.3, 2.1], [4, 0.6, 0.4]])\n",
+        "stds = np.array([[2, 0.2, 0.4], [2, 0.2, 0.3]])\n",
+        "priors = np.array([2/3, 1/3])\n",
+        "\n",
+        "heights = np.exp(-0.5 * ((x - means) / stds) ** 2) / (stds * np.sqrt(2 * np.pi))\n",
+        "scores = priors * np.prod(heights, axis=1)\n",
+        "posterior = scores / scores.sum()\n",
+        "\n",
+        "if any(v is None for v in [heights, scores, posterior]):\n",
+        "    print('Complete all TODOs.')\n",
+        "else:\n",
+        "    assert np.shape(heights) == (2,3)\n",
+        "    reference = np.exp(-0.5*((x-means)/stds)**2)/(stds*np.sqrt(2*np.pi))\n",
+        "    assert np.allclose(heights, reference)\n",
+        "    assert np.allclose(scores, priors*np.prod(reference, axis=1))\n",
+        "    assert np.allclose(posterior, scores/scores.sum())\n",
+        "    print('Check passed. Posterior [I,M]:', posterior)"
+      ],
+      "execution_count": 9,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Check passed. Posterior [I,M]: [0.00002 0.99998]\n"
+          ]
+        }
+      ],
+      "id": "cell-024"
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "cell-025"
+      },
+      "source": [
+        "**Explain (1–2 sentences):** Why does density provide no discrimination here?\n",
+        "Should the predicted probability be treated as experimentally established confidence?\n",
+        "\n",
+        "**Answer:** Both classes have the same density mean (4) and standard deviation (2), so the density feature contributes the same Gaussian likelihood to both classes and does not change their relative scores. The resulting probability is a model-based estimate under the assumptions and parameters given, not experimentally established confidence."
+      ],
+      "id": "cell-025"
+    }
+  ],
+  "metadata": {
+    "kernelspec": {
+      "display_name": "Python 3",
+      "language": "python",
+      "name": "python3"
+    },
+    "language_info": {
+      "name": "python",
+      "version": "3.11"
+    },
+    "colab": {
+      "provenance": [],
+      "include_colab_link": true
+    }
+  },
+  "nbformat": 4,
+  "nbformat_minor": 5
+}
